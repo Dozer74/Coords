@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Coords</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+<div class="container-fluid h-100">
+    <!--<div id="search-group" class="row h-100 justify-content-center align-items-center">-->
+    <div id="search-group" class="row justify-content-center align-items-center my-3">
+        <form class="col-8">
+            <div class="input-group input-group-lg">
+                <input type="text" class="form-control" placeholder="Enter or paste coords">
+                <div class="input-group-append">
+                    <button id="btn-search" class="btn btn-outline-secondary" type="button">Search</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="row mx-auto">
+
+        <div class="col-lg-4 col-md-12 mb-md-2">
+            <h4>Google maps</h4>
+            <div id="google-map" class="template"></div>
+        </div>
+        <div class="col-lg-4 col-md-12 mb-md-2">
+            <h4>Yandex maps</h4>
+            <div id="ya-map" class="template"></div>
+        </div>
+
+        <div class="col-lg-4 col-md-12 mb-md-2">
+            <h4>2Gis</h4>
+            <div id="gis-map" class="template"></div>
+        </div>
+
+
+    </div>
+
+</div>
+
+<script src="js/jquery.min.js"></script>
+<script src="js/google-maps.js"></script>
+<script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
+<script src="https://maps.api.2gis.ru/2.0/loader.js?pkg=full"></script>
+
+<script>
+    $(document).ready($ => {
+
+        const coords = {lat: 55.164742, lng: 61.429509};
+
+        const map = new google.maps.Map(document.getElementById('google-map'), {
+            center: coords,
+            zoom: 16
+        });
+        const marker = new google.maps.Marker({map: map, position: coords});
+    });
+</script>
+
+<script>
+    ymaps.ready(() => {
+        const yaMap = new ymaps.Map('ya-map', {
+            center: [55.164742, 61.429509],
+            zoom: 16,
+            controls: ['typeSelector', 'fullscreenControl']
+        }, {
+            searchControlProvider: 'yandex#search'
+        });
+
+        yaMap.geoObjects.add(new ymaps.Placemark([55.164742, 61.429509], {}, {
+            preset: 'islands#dotIcon',
+            iconColor: 'red'
+        }));
+    });
+</script>
+
+<script>
+    DG.then(() => {
+        const gisMap = DG.map('gis-map', {
+            'center': [55.164742, 61.429509],
+            'zoom': 16
+        });
+        DG.marker([55.164742, 61.429509]).addTo(gisMap);
+    });
+</script>
+
+
+<script>
+    $(document).ready($ => {
+        $('#btn-search').click(() => {
+            $('#search-group').removeClass('h-100').addClass('mt-2');
+        });
+    });
+</script>
+</body>
+</html>
