@@ -13,3 +13,7 @@ body, html {
     width: 400px;
     text-align: left;
 }
+
+#search-input {
+    border-color: #ced4da !important;
+}

@@ -12,12 +12,17 @@
 <body>
 
 <div class="container-fluid h-100">
-    <!--<div id="search-group" class="row h-100 justify-content-center align-items-center">-->
-    <div id="search-group" class="row justify-content-center align-items-center my-3">
+    <div id="search-group" class="row h-100 justify-content-center align-items-center">
         <form class="col-8">
             <div class="input-group input-group-lg">
                 <input class="form-control py-2 border-right-0 border" type="search" placeholder="Enter or paste coords"
                        id="search-input">
+
+                <span class="input-group-append">
+                    <div class="input-group-text bg-transparent">
+                        <i id="coords-format" class="small"></i>
+                    </div>
+                </span>
 
                 <span class="input-group-append" data-toggle="tooltip" data-placement="bottom" data-html="true"
                       title="Поддерживаются следующие форматы координат:
@@ -60,7 +65,7 @@
         </form>
     </div>
 
-    <div id="geo-maps" class="frame-holder row mx-auto">
+    <div id="geo-maps" class="frame-holder row mx-auto d-none">
 
         <div class="col-lg-4 col-md-12 mb-md-2">
             <h4>Google maps</h4>
@@ -113,7 +118,7 @@
     }
 
     function searchCoords(text = null) {
-        $('#search-group').removeClass('h-100').addClass('mt-2');
+        $('#search-group').removeClass('h-100').addClass('my-2');
 
         if (!text) {
             text = searchInput.val();
@@ -126,16 +131,20 @@
 
         if (coords.format === 'plus') {
             switchFramesVisibility('plus-map');
+            $('#coords-format').text('Plus');
             $('#plus-frame')[0].src = 'http://plus.codes/' + coords.coords;
         }
         else if (coords.format === 'w3') {
             switchFramesVisibility('w3-map');
+            $('#coords-format').text('W3');
             $('#w3-frame')[0].src = 'http://map.what3words.com/' + coords.coords;
 
         }
         else {
             switchFramesVisibility('geo-maps');
+            $('#coords-format').text(coords.format === 'geo' ? 'Geo' : 'DD');
             coords = coords.coords;
+
             googleMap.moveTo(coords);
             yaMap.moveTo(coords);
             gisMap.moveTo(coords);
