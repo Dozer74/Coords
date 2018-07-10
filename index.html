@@ -5,6 +5,8 @@
     <title>Coords</title>
     <link rel="stylesheet" href="css/bootstrap.min.css">
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css"
+          integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous">
 </head>
 
 <body>
@@ -14,7 +16,43 @@
     <div id="search-group" class="row justify-content-center align-items-center my-3">
         <form class="col-8">
             <div class="input-group input-group-lg">
-                <input type="text" class="form-control" placeholder="Enter or paste coords">
+                <input class="form-control py-2 border-right-0 border" type="search" placeholder="Enter or paste coords"
+                       id="search-input">
+
+                <span class="input-group-append" data-toggle="tooltip" data-placement="bottom" data-html="true"
+                      title="Поддерживаются следующие форматы координат:
+                      <ol>
+                        <li>Decimal degrees&nbsp;<i>(DD)</i>
+                            <ul>
+                                <li>55.161387 61.391246</li>
+                                <li>055.161387; 061.391246</li>
+                                <li>55 161387 61 391246</li>
+                            </ul>
+                        </li>
+                        <li>Geo Coords&nbsp;<i>(Geo)</i>
+                            <ul>
+                                <li>55 16 13 87, 61 39 12 46</li>
+                                <li>55°16'13.87&quot; 61°39'12.46&quot;</li>
+                                <li>55°16'13.87&quot;N 61°39'12.46&quot;E</li>
+                            </ul>
+                        </li>
+                        <li>Plus Coords&nbsp;<i>(Plus)</i>
+                            <ul>
+                                <li>9J73596R+JG - полная форма</li>
+                                <li>596R+JG - краткая форма</li>
+                            </ul>
+                            В краткой форме будет использоваться префикс Челябинской обл (<b>9J73</b>)
+                        <li>Word 3 Coords&nbsp;<i>(W3)</i>
+                            <ul>
+                                <li>///исток.врач.пантера</li>
+                                <li>резюме.сверх.пауза</li>
+                        </li>
+                      </ol>">
+                    <div class="input-group-text bg-transparent">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                </span>
+
                 <div class="input-group-append">
                     <button id="btn-search" class="btn btn-outline-secondary" type="button">Search</button>
                 </div>
@@ -22,7 +60,7 @@
         </form>
     </div>
 
-    <div class="row mx-auto">
+    <div id="geo-maps" class="frame-holder row mx-auto">
 
         <div class="col-lg-4 col-md-12 mb-md-2">
             <h4>Google maps</h4>
@@ -37,64 +75,101 @@
             <h4>2Gis</h4>
             <div id="gis-map" class="template"></div>
         </div>
+    </div>
+
+    <div id="plus-map" class="frame-holder row mx-auto d-none">
+        <div class="embed-responsive embed-responsive-16by9">
+            <iframe id="plus-frame" class="embed-responsive-item" allowfullscreen></iframe>
+        </div>
+    </div>
 
 
+    <div id="w3-map" class="frame-holder row mx-auto d-none">
+        <div class="embed-responsive embed-responsive-16by9">
+            <iframe id="w3-frame" class="embed-responsive-item" allowfullscreen></iframe>
+        </div>
     </div>
 
 </div>
 
 <script src="js/jquery.min.js"></script>
-<script src="js/google-maps.js"></script>
+<script src="js/bootstrap.bundle.min.js"></script>
+<script src="js/maps.js"></script>
+<script src="js/coords.js"></script>
+
 <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
 <script src="https://maps.api.2gis.ru/2.0/loader.js?pkg=full"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB8bjzgYQfhgg-Fa2dPIfWJ1t4gKvwSu0U"></script>
 
 <script>
-    $(document).ready($ => {
+    let googleMap = null;
+    let yaMap = null;
+    let gisMap = null;
+    let searchInput = null;
 
-        const coords = {lat: 55.164742, lng: 61.429509};
+    function switchFramesVisibility(visibleId) {
+        $('.frame-holder').addClass('d-none');
+        $(`#${visibleId}`).removeClass('d-none');
+    }
 
-        const map = new google.maps.Map(document.getElementById('google-map'), {
-            center: coords,
-            zoom: 16
+    function searchCoords(text = null) {
+        $('#search-group').removeClass('h-100').addClass('mt-2');
+
+        if (!text) {
+            text = searchInput.val();
+        }
+        let coords = parseCoords(text);
+
+        if (!coords) {
+            return;
+        }
+
+        if (coords.format === 'plus') {
+            switchFramesVisibility('plus-map');
+            $('#plus-frame')[0].src = 'http://plus.codes/' + coords.coords;
+        }
+        else if (coords.format === 'w3') {
+            switchFramesVisibility('w3-map');
+            $('#w3-frame')[0].src = 'http://map.what3words.com/' + coords.coords;
+
+        }
+        else {
+            switchFramesVisibility('geo-maps');
+            coords = coords.coords;
+            googleMap.moveTo(coords);
+            yaMap.moveTo(coords);
+            gisMap.moveTo(coords);
+        }
+
+    }
+
+    $(document).ready(async $ => {
+        $('[data-toggle="tooltip"]').tooltip();
+        searchInput = $('#search-input');
+
+        googleMap = new GoogleMap('google-map');
+
+        let promiseYa = ymaps.ready().then(() => {
+            yaMap = new YandexMap('ya-map');
         });
-        const marker = new google.maps.Marker({map: map, position: coords});
+        let promiseGis = DG.then(() => {
+            gisMap = new GisMap('gis-map');
+        });
+
+        await Promise.all([promiseGis, promiseYa]);
+
+
+        $('#btn-search').click(() => searchCoords());
+        searchInput.keypress(e => {
+            if (e.keyCode === 13) {
+                e.preventDefault();
+                searchCoords();
+            }
+        });
+
+
     });
 </script>
 
-<script>
-    ymaps.ready(() => {
-        const yaMap = new ymaps.Map('ya-map', {
-            center: [55.164742, 61.429509],
-            zoom: 16,
-            controls: ['typeSelector', 'fullscreenControl']
-        }, {
-            searchControlProvider: 'yandex#search'
-        });
-
-        yaMap.geoObjects.add(new ymaps.Placemark([55.164742, 61.429509], {}, {
-            preset: 'islands#dotIcon',
-            iconColor: 'red'
-        }));
-    });
-</script>
-
-<script>
-    DG.then(() => {
-        const gisMap = DG.map('gis-map', {
-            'center': [55.164742, 61.429509],
-            'zoom': 16
-        });
-        DG.marker([55.164742, 61.429509]).addTo(gisMap);
-    });
-</script>
-
-
-<script>
-    $(document).ready($ => {
-        $('#btn-search').click(() => {
-            $('#search-group').removeClass('h-100').addClass('mt-2');
-        });
-    });
-</script>
 </body>
 </html>
